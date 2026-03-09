@@ -1,8 +1,13 @@
 {
   "ExpandedNodes": [
     "",
+    "\\.next",
     "\\app",
-    "\\app\\api"
+    "\\app\\api",
+    "\\data",
+    "\\lib",
+    "\\public"
   ],
+  "SelectedNode": "\\public",
   "PreviewInSolutionExplorer": false
 }
