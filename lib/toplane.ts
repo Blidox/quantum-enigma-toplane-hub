@@ -1,8 +1,14 @@
-import matchupData from '../data/toplane-matchups.json';
+import matchupData from './toplane-matchups';
 
+/**
+ * Complete top-lane champion pool for Quantum Enigma.
+ * IDs must match the Riot ddragon champion JSON keys exactly.
+ */
 export const TOP_LANE_POOL = [
   'Aatrox',
+  'Akali',
   'Ambessa',
+  'Aurora',
   'Camille',
   'ChoGath',
   'Darius',
@@ -13,10 +19,13 @@ export const TOP_LANE_POOL = [
   'Gnar',
   'Gragas',
   'Gwen',
+  'Heimerdinger',
   'Illaoi',
   'Irelia',
   'Jax',
   'Jayce',
+  'KSante',
+  'Kayle',
   'Kennen',
   'Kled',
   'Malphite',
@@ -29,24 +38,31 @@ export const TOP_LANE_POOL = [
   'Poppy',
   'Quinn',
   'Renekton',
+  'Rengar',
   'Riven',
   'Rumble',
   'Sett',
   'Shen',
   'Singed',
   'Sion',
+  'Skarner',
+  'Smolder',
+  'Sylas',
+  'TahmKench',
   'Teemo',
   'Trundle',
   'Tryndamere',
+  'Udyr',
   'Urgot',
   'Vayne',
+  'Vladimir',
   'Volibear',
   'Warwick',
   'Wukong',
   'Yasuo',
   'Yone',
   'Yorick',
-  'Zac'
+  'Zac',
 ] as const;
 
 export const TOP_MATCHUPS = matchupData;
