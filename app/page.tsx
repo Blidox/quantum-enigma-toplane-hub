@@ -5,7 +5,8 @@ import Image from 'next/image';
 import {
   Search, Shield, Swords, Brain, Sparkles, Trophy, X, ChevronRight,
   Zap, Target, Lightbulb, MessageCircle, Quote, Users, Send, ThumbsUp,
-  Plus, Hash, Clock, ArrowRight,
+  Plus, Hash, Clock, BookOpen, Waves, Crosshair, Map, Eye, Timer,
+  ArrowUpDown, Flame,
 } from 'lucide-react';
 import { TOP_LANE_POOL, TOP_MATCHUPS, championIcon } from '../lib/toplane';
 
@@ -22,12 +23,10 @@ type MatchupMap = Record<string, { counters: CounterEntry[] }>;
 type RuneIconMap = Record<string, string>;
 type ItemIconMap = Record<string, string>;
 type DetailTab = 'overview' | 'runes' | 'items' | 'ai';
-type PageView = 'tool' | 'community' | 'quotes';
+type PageView = 'tool' | 'community' | 'fundamentals';
 
 type ForumReply = { id: string; author: string; content: string; timestamp: number; likes: number };
 type ForumPost = { id: string; author: string; title: string; content: string; tag: string; timestamp: number; likes: number; replies: ForumReply[] };
-type MemberQuote = { id: string; author: string; role: string; text: string; likes: number };
-type CommunityTip = { id: string; author: string; champId: string; tip: string; likes: number };
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -44,8 +43,7 @@ function timeAgo(ts: number) {
   if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
 }
 
 function genId() { return Math.random().toString(36).slice(2, 10); }
@@ -57,49 +55,169 @@ const RANK_STYLES = [
 ];
 
 /* ------------------------------------------------------------------ */
-/*  Sample community data                                              */
+/*  Quotes — shown randomly throughout the site                        */
 /* ------------------------------------------------------------------ */
 
-const SAMPLE_POSTS: ForumPost[] = [
+const MEMBER_QUOTES = [
+  { author: 'Skullcrusher', text: 'Top lane is an island. You either become the king of it, or you drown.' },
+  { author: 'BladeOfQE', text: 'Every lost lane is a lesson. Every won lane is proof you learned.' },
+  { author: 'TopDiff', text: 'The best counter pick is the champion you have 500 games on.' },
+  { author: 'IronWill', text: 'Don\'t play to not lose. Play to win. There\'s a massive difference.' },
+  { author: 'QEForge', text: 'We don\'t just play together — we improve together. That\'s what Quantum Enigma is about.' },
+  { author: 'Skullcrusher', text: 'If you\'re not tracking the enemy jungler, you\'re flipping a coin every 3 minutes.' },
+  { author: 'BladeOfQE', text: 'Wave management wins more lanes than mechanics ever will.' },
+];
+
+function RandomQuote() {
+  const [quote] = useState(() => MEMBER_QUOTES[Math.floor(Math.random() * MEMBER_QUOTES.length)]);
+  return (
+    <div className="flex items-start gap-3 rounded-xl border border-white/[0.04] bg-white/[0.015] px-4 py-3">
+      <Quote className="mt-0.5 h-4 w-4 shrink-0 text-lime-400/30" />
+      <div>
+        <p className="text-[13px] leading-relaxed text-zinc-400 italic">&ldquo;{quote.text}&rdquo;</p>
+        <p className="mt-1 text-[11px] font-medium text-lime-400/60">— {quote.author}</p>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Fundamentals content                                               */
+/* ------------------------------------------------------------------ */
+
+const FUNDAMENTALS = [
   {
-    id: '1', author: 'Skullcrusher', title: 'How do you deal with ranged tops as Darius?',
-    content: 'I keep getting poked out by Quinn and Vayne players. Even with Doran\'s Shield and Second Wind I feel like I can\'t get close enough to stack passive. Any tips?',
-    tag: 'Darius', timestamp: Date.now() - 3600000 * 2, likes: 7,
-    replies: [
-      { id: 'r1', author: 'TopDiff', content: 'Take Ghost + Flash and run them down at level 6. Before that, give up some CS and freeze near your tower. They will push and your jungler can gank.', timestamp: Date.now() - 3600000, likes: 4 },
-      { id: 'r2', author: 'IronWill', content: 'Bush control is key. Sit in the river bush or lane bushes, they can\'t auto you if they can\'t see you. Walk out, E pull, full combo.', timestamp: Date.now() - 1800000, likes: 3 },
+    id: 'wave',
+    icon: Waves,
+    title: 'Wave Management',
+    subtitle: 'Control the wave, control the lane',
+    sections: [
+      {
+        heading: 'Freezing',
+        content: 'A freeze happens when you keep the enemy minion wave just outside your tower range. To set it up, let 3-4 extra enemy casters stay alive. Only last-hit, never use abilities on the wave. This zones the enemy from CS and makes them vulnerable to ganks. Break the freeze only when you want to recall, roam, or dive.',
+      },
+      {
+        heading: 'Slow Push',
+        content: 'Kill the enemy caster minions first but leave the melees alive. Your wave will slowly stack up into a big wave over 2-3 waves. Use slow pushes before recalling (so you don\'t lose CS to tower), before roaming (the big wave crashes and denies CS), or to set up a dive with your jungler.',
+      },
+      {
+        heading: 'Fast Push',
+        content: 'Use all your abilities to kill the wave as fast as possible. Do this when you need to reset quickly, when the enemy just recalled, or when you want to get plates. Fast pushing after a kill lets you deny the most CS.',
+      },
+      {
+        heading: 'The Bounce-Back',
+        content: 'After crashing a big wave into the enemy tower, the wave will naturally push back toward you. This is called a bounce. It\'s the easiest way to set up a freeze — crash a big wave, then let it come back to you.',
+      },
     ],
   },
   {
-    id: '2', author: 'BladeOfQE', title: 'Fiora vs Aatrox: Riposte timing guide',
-    content: 'For those struggling with this matchup — the key is to NOT riposte his Q1 or Q2. Always save it for Q3 or his W chain. Q3 has a longer windup so it\'s easier to react to. If you riposte the W pull, you get a guaranteed stun + vital proc.',
-    tag: 'Fiora', timestamp: Date.now() - 3600000 * 8, likes: 12,
-    replies: [
-      { id: 'r3', author: 'Skullcrusher', content: 'Great tip! I\'ve been wasting riposte on Q1 like an idiot. Will practice this in customs.', timestamp: Date.now() - 3600000 * 6, likes: 2 },
+    id: 'trading',
+    icon: Crosshair,
+    title: 'Trading Patterns',
+    subtitle: 'Win trades without losing HP',
+    sections: [
+      {
+        heading: 'Short Trades vs Extended Trades',
+        content: 'Short trades are 1-2 ability combos followed by an immediate disengage. Extended trades last 5+ seconds with continuous fighting. Know which type your champion excels at. Renekton loves short trades (E-W-Q-E out). Darius wants extended trades to stack passive. Playing the wrong trade pattern is the most common mistake in top lane.',
+      },
+      {
+        heading: 'The Minion Rule',
+        content: 'Early game, minions deal massive damage. Never trade into a large enemy minion wave — you will lose even if you land all your abilities. The ideal trade happens when the enemy walks up to last-hit and you have more minions than them.',
+      },
+      {
+        heading: 'Cooldown Punishing',
+        content: 'Track the enemy\'s key ability cooldowns. If Darius misses his E pull (24 second cooldown level 1), you have a massive window to trade for free. If Fiora wastes Riposte, she\'s defenseless for 24 seconds. Every champion has one ability that defines their lane — punish when it\'s down.',
+      },
+      {
+        heading: 'Level Spikes',
+        content: 'Levels 2, 3, and 6 are the biggest power spikes. If you hit level 2 first (the first full wave + 1 melee minion of wave 2), you have a free trade or kill window. Level 6 is the biggest spike for most champions — always track your XP bar and look for all-ins the moment you hit it.',
+      },
     ],
   },
   {
-    id: '3', author: 'JungleGap', title: 'Wave management fundamentals for top lane',
-    content: 'Can someone explain when to freeze vs slow push vs fast push? I always just auto the wave and hope for the best lol.',
-    tag: 'General', timestamp: Date.now() - 3600000 * 24, likes: 5,
-    replies: [],
+    id: 'tp',
+    icon: Map,
+    title: 'Teleport Usage',
+    subtitle: 'When and where to TP',
+    sections: [
+      {
+        heading: 'TP Timing',
+        content: 'Before 14 minutes, Teleport can only target towers. Use it to get back to lane quickly after a bad recall or to not lose a huge wave to tower. After 14 minutes it unlocks for minions and wards — this is when you can make cross-map plays.',
+      },
+      {
+        heading: 'Flank Teleports',
+        content: 'The best TPs are behind the enemy team. Look for a ward or minion behind their backline during a dragon or baron fight. Flanking with TP often wins the fight on its own because the enemy has to split attention.',
+      },
+      {
+        heading: 'When NOT to TP',
+        content: 'Don\'t TP to a fight your team is already losing 4v5. Don\'t TP when you have a massive wave crashing into your tower (you lose 2-3 waves of gold and XP). Don\'t TP to a fight without R — you\'ll arrive weak. The best play is often to split push and force the enemy to match you.',
+      },
+    ],
   },
-];
-
-const SAMPLE_QUOTES: MemberQuote[] = [
-  { id: 'q1', author: 'Skullcrusher', role: 'Top Laner', text: 'Top lane is an island. You either become the king of it, or you drown.', likes: 15 },
-  { id: 'q2', author: 'BladeOfQE', role: 'Team Captain', text: 'Every lost lane is a lesson. Every won lane is proof you learned.', likes: 22 },
-  { id: 'q3', author: 'TopDiff', role: 'Analyst', text: 'The best counter pick is the champion you have 500 games on.', likes: 18 },
-  { id: 'q4', author: 'IronWill', role: 'Coach', text: 'Don\'t play to not lose. Play to win. There\'s a massive difference.', likes: 11 },
-  { id: 'q5', author: 'QEForge', role: 'Founder', text: 'We don\'t just play together — we improve together. That\'s what Quantum Enigma is about.', likes: 30 },
-];
-
-const SAMPLE_TIPS: CommunityTip[] = [
-  { id: 't1', author: 'BladeOfQE', champId: 'Fiora', tip: 'Always auto-reset with E after Q for faster vital procs.', likes: 8 },
-  { id: 't2', author: 'Skullcrusher', champId: 'Darius', tip: 'Ghost is better than Ignite in 90% of matchups. The sticking power is insane.', likes: 14 },
-  { id: 't3', author: 'TopDiff', champId: 'Gwen', tip: 'Stack 4 autos on minions before trading with Q — center Q does way more damage.', likes: 6 },
-  { id: 't4', author: 'IronWill', champId: 'Jax', tip: 'Don\'t use E preemptively. Wait for the enemy to commit, THEN activate Counter Strike.', likes: 10 },
-  { id: 't5', author: 'JungleGap', champId: 'Mordekaiser', tip: 'Ult the enemy carry in teamfights, not the tank. Even if you die, removing their ADC wins the fight.', likes: 9 },
+  {
+    id: 'vision',
+    icon: Eye,
+    title: 'Vision & Map Awareness',
+    subtitle: 'See the gank before it happens',
+    sections: [
+      {
+        heading: 'Warding Spots',
+        content: 'Place your ward in the river bush or tri-bush depending on which side you\'re playing. If you\'re on red side, the tri-bush ward is more important. If you\'re on blue side, the river bush covers most gank paths. At level 1, ward at 1:15 to spot early invades or cheese ganks.',
+      },
+      {
+        heading: 'Tracking the Jungler',
+        content: 'If the enemy jungler shows bot side, you have roughly 30-40 seconds to play aggressively. Watch the minimap every 3 seconds. If the enemy jungler started bot side (you can tell by which laner leashed), they\'ll likely be top side around 3:00-3:30 for their first gank.',
+      },
+      {
+        heading: 'Playing Without Vision',
+        content: 'If your ward is down and you don\'t know where the jungler is, play toward the side of the lane closest to your tower. Don\'t push past the halfway point. Treat no information as dangerous information.',
+      },
+    ],
+  },
+  {
+    id: 'matchup',
+    icon: ArrowUpDown,
+    title: 'Matchup Phases',
+    subtitle: 'How the lane evolves over time',
+    sections: [
+      {
+        heading: 'Levels 1-3: The Foundation',
+        content: 'These levels determine the lane. Focus on getting level 2 first, establishing wave control, and chunking the enemy with favorable trades. Most first bloods happen at level 2 or 3. Know your champion\'s strongest early level and play around it.',
+      },
+      {
+        heading: 'Levels 4-5: The Setup',
+        content: 'This is where you set up for the level 6 fight. Build a health and CS advantage through trades. Get the wave in a favorable position. Recall at the right time to pick up a component item before the level 6 fight.',
+      },
+      {
+        heading: 'Level 6: The Spike',
+        content: 'Most top laners have game-changing ultimates. Irelia, Darius, Riven, Fiora — all spike hard at 6. Track both XP bars. If you hit 6 first with a health advantage, look for the all-in immediately. If the enemy hits 6 first, back off and wait for your own spike.',
+      },
+      {
+        heading: 'Post-6 to Mid Game',
+        content: 'After the first tower falls, the laning phase transitions. The top laner who lost tower should group or freeze under their second tower. The winner should pressure the advantage by taking plates, roaming, or setting up herald. Don\'t overstay and throw your lead.',
+      },
+    ],
+  },
+  {
+    id: 'backs',
+    icon: Timer,
+    title: 'Recall Timing',
+    subtitle: 'When to back without losing anything',
+    sections: [
+      {
+        heading: 'The Cannon Wave Rule',
+        content: 'Cannon waves are the safest time to recall because they take longer to kill under tower, meaning you lose fewer minions. After crashing a cannon wave into the enemy tower, immediately recall. You\'ll get back to lane before you miss much.',
+      },
+      {
+        heading: 'Cheater Recalls',
+        content: 'The cheater recall is a powerful early strategy: slow push wave 1 and 2, crash the big wave 3 into tower, then immediately recall. You come back to lane with an item advantage (usually a Long Sword or Doran\'s item) while the enemy is stuck in lane with no items. This works best when starting blue side.',
+      },
+      {
+        heading: 'Buy Thresholds',
+        content: 'Know your champion\'s key buy thresholds. For most fighters, 450g (Long Sword) or 1100g (Recurve Bow / Pickaxe) are the breakpoints. Don\'t recall with an awkward gold amount like 800g where you can\'t buy anything meaningful. Sometimes staying in lane for one more wave gets you to the next threshold.',
+      },
+    ],
+  },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -220,7 +338,6 @@ export default function Page() {
   const [data, setData] = useState<RiotChampionResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Tool state
   const [search, setSearch] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
   const [selectedEnemyId, setSelectedEnemyId] = useState('');
@@ -232,24 +349,19 @@ export default function Page() {
   const [runeIconMap, setRuneIconMap] = useState<RuneIconMap>({});
   const [itemIconMap, setItemIconMap] = useState<ItemIconMap>({});
 
-  // Page navigation
   const [pageView, setPageView] = useState<PageView>('tool');
 
-  // Community state
-  const [forumPosts, setForumPosts] = useState<ForumPost[]>(SAMPLE_POSTS);
+  // Community
+  const [forumPosts, setForumPosts] = useState<ForumPost[]>([]);
   const [newPostTitle, setNewPostTitle] = useState('');
   const [newPostContent, setNewPostContent] = useState('');
   const [newPostTag, setNewPostTag] = useState('General');
   const [showNewPost, setShowNewPost] = useState(false);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
-  const [communityTips, setCommunityTips] = useState<CommunityTip[]>(SAMPLE_TIPS);
 
-  // Quotes state
-  const [quotes, setQuotes] = useState<MemberQuote[]>(SAMPLE_QUOTES);
-  const [newQuoteText, setNewQuoteText] = useState('');
-  const [newQuoteAuthor, setNewQuoteAuthor] = useState('');
-  const [showNewQuote, setShowNewQuote] = useState(false);
+  // Fundamentals
+  const [expandedFundamental, setExpandedFundamental] = useState<string | null>(FUNDAMENTALS[0].id);
 
   const pickerRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -305,7 +417,7 @@ export default function Page() {
     return () => document.removeEventListener('mousedown', h);
   }, []);
 
-  /* ----- derived state ----- */
+  /* ----- derived ----- */
 
   const filteredChampions = useMemo(() => {
     if (!data) return [];
@@ -318,12 +430,6 @@ export default function Page() {
   const matchup = selectedEnemyId ? (TOP_MATCHUPS as MatchupMap)[selectedEnemyId] : undefined;
   const selectedCounterData = matchup?.counters.find((c) => c.id === selectedCounterId) || null;
   const selectedCounter = useMemo(() => data?.champions.find((c) => c.id === selectedCounterId) || null, [data, selectedCounterId]);
-
-  // Relevant community tips for current matchup
-  const relevantTips = useMemo(() => {
-    if (!selectedCounterId && !selectedEnemyId) return communityTips;
-    return communityTips.filter(t => t.champId === selectedCounterId || t.champId === selectedEnemyId);
-  }, [communityTips, selectedCounterId, selectedEnemyId]);
 
   /* ----- actions ----- */
 
@@ -355,26 +461,19 @@ export default function Page() {
 
   function submitForumPost() {
     if (!newPostTitle.trim() || !newPostContent.trim()) return;
-    const post: ForumPost = {
+    setForumPosts([{
       id: genId(), author: 'You', title: newPostTitle, content: newPostContent,
       tag: newPostTag, timestamp: Date.now(), likes: 0, replies: [],
-    };
-    setForumPosts([post, ...forumPosts]);
+    }, ...forumPosts]);
     setNewPostTitle(''); setNewPostContent(''); setNewPostTag('General'); setShowNewPost(false);
   }
 
   function submitReply(postId: string) {
     if (!replyContent.trim()) return;
-    const reply: ForumReply = { id: genId(), author: 'You', content: replyContent, timestamp: Date.now(), likes: 0 };
-    setForumPosts(forumPosts.map(p => p.id === postId ? { ...p, replies: [...p.replies, reply] } : p));
+    setForumPosts(forumPosts.map(p => p.id === postId
+      ? { ...p, replies: [...p.replies, { id: genId(), author: 'You', content: replyContent, timestamp: Date.now(), likes: 0 }] }
+      : p));
     setReplyContent(''); setReplyingTo(null);
-  }
-
-  function submitQuote() {
-    if (!newQuoteText.trim() || !newQuoteAuthor.trim()) return;
-    const q: MemberQuote = { id: genId(), author: newQuoteAuthor, role: 'Member', text: newQuoteText, likes: 0 };
-    setQuotes([q, ...quotes]);
-    setNewQuoteText(''); setNewQuoteAuthor(''); setShowNewQuote(false);
   }
 
   const getRuneIcon = (name: string) => runeIconMap[normalizeName(name)];
@@ -388,7 +487,7 @@ export default function Page() {
     <main className="min-h-screen bg-[#08080b] text-white">
       <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6">
 
-        {/* HEADER */}
+        {/* HEADER + NAV */}
         <header className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
           <div className="flex items-center gap-3">
             <Image src="/qe-logo.png" alt="Quantum Enigma" width={44} height={44}
@@ -401,38 +500,21 @@ export default function Page() {
               <h1 className="text-base font-semibold tracking-tight sm:text-lg">Top Lane Hub</h1>
             </div>
           </div>
-          {/* Navigation */}
-          <nav className="mt-3 flex gap-1 border-t border-white/[0.04] pt-3">
+          <nav className="mt-3 flex gap-1 border-t border-white/[0.04] pt-3 overflow-x-auto">
             <NavBtn active={pageView === 'tool'} onClick={() => setPageView('tool')} icon={Swords} label="Matchup Tool" />
+            <NavBtn active={pageView === 'fundamentals'} onClick={() => setPageView('fundamentals')} icon={BookOpen} label="Fundamentals" />
             <NavBtn active={pageView === 'community'} onClick={() => setPageView('community')} icon={Users} label="Community" />
-            <NavBtn active={pageView === 'quotes'} onClick={() => setPageView('quotes')} icon={Quote} label="Quotes" />
           </nav>
         </header>
 
         {/* ============================================================ */}
-        {/* MATCHUP TOOL VIEW                                             */}
+        {/* MATCHUP TOOL                                                  */}
         {/* ============================================================ */}
 
         {pageView === 'tool' && (
           <div className="mt-4 space-y-4">
 
-            {/* Community tips banner for selected matchup */}
-            {relevantTips.length > 0 && selectedEnemyId && (
-              <div className="rounded-xl border border-lime-400/10 bg-lime-400/[0.03] p-3">
-                <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-lime-400/70">
-                  <Users className="h-3.5 w-3.5" /> Community tips
-                </div>
-                <div className="mt-2 flex gap-3 overflow-x-auto pb-1">
-                  {relevantTips.map(tip => (
-                    <div key={tip.id} className="flex-none rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-xs text-zinc-400" style={{ maxWidth: 280 }}>
-                      <span className="font-medium text-lime-300">{tip.author}</span> on {tip.champId}: {tip.tip}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* STEP 1 — SELECT ENEMY */}
+            {/* STEP 1 */}
             <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
               <SectionHeader icon={Search} title="Select the enemy top laner" />
               <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start">
@@ -483,7 +565,7 @@ export default function Page() {
               </div>
             </section>
 
-            {/* STEP 2 — COUNTER PICKS */}
+            {/* STEP 2 */}
             {matchup && data && (
               <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                 <SectionHeader icon={Shield} title="Counter picks" subtitle="Choose your answer to the matchup" />
@@ -497,11 +579,13 @@ export default function Page() {
               </section>
             )}
 
-            {/* STEP 3 — MATCHUP DETAILS */}
+            {/* Random quote between sections */}
+            <RandomQuote />
+
+            {/* STEP 3 */}
             <div ref={detailsRef} className="scroll-mt-4">
               {selectedCounterData && selectedEnemy && selectedCounter && data ? (
                 <div className="space-y-3">
-                  {/* Banner */}
                   <div className="flex flex-wrap items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
                     <div className="flex items-center gap-2">
                       <img src={championIcon(data.version, selectedCounter.id)} alt={selectedCounter.name} width={44} height={44} className="h-11 w-11 rounded-lg border-2 border-lime-400/30" />
@@ -514,12 +598,9 @@ export default function Page() {
                         {selectedCounter.name} <span className="font-normal text-zinc-500">into</span> {selectedEnemy.name}
                       </h3>
                     </div>
-                    <div className="ml-auto rounded-lg bg-lime-400/15 px-2.5 py-1 text-xs font-bold text-lime-300">
-                      {selectedCounterData.score}/10
-                    </div>
+                    <div className="ml-auto rounded-lg bg-lime-400/15 px-2.5 py-1 text-xs font-bold text-lime-300">{selectedCounterData.score}/10</div>
                   </div>
 
-                  {/* Tabs */}
                   <div className="flex gap-1 overflow-x-auto rounded-lg border border-white/[0.06] bg-white/[0.02] p-1">
                     <TabBtn active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={Target} label="Overview" />
                     <TabBtn active={activeTab === 'runes'} onClick={() => setActiveTab('runes')} icon={Sparkles} label="Runes" />
@@ -527,9 +608,7 @@ export default function Page() {
                     <TabBtn active={activeTab === 'ai'} onClick={() => setActiveTab('ai')} icon={Brain} label="AI Coach" />
                   </div>
 
-                  {/* Content */}
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5">
-
                     {activeTab === 'overview' && (
                       <div className="space-y-4">
                         <DetailCard title="Why it works" icon={Zap}>
@@ -553,10 +632,8 @@ export default function Page() {
 
                     {activeTab === 'runes' && (
                       <div className="space-y-5">
-                        {[
-                          { label: 'Primary', tree: selectedCounterData.runes.primaryTree, runes: selectedCounterData.runes.primaryKeystones },
-                          { label: 'Secondary', tree: selectedCounterData.runes.secondaryTree, runes: selectedCounterData.runes.secondaryRunes },
-                        ].map(({ label, tree, runes }) => (
+                        {[{ label: 'Primary', tree: selectedCounterData.runes.primaryTree, runes: selectedCounterData.runes.primaryKeystones },
+                          { label: 'Secondary', tree: selectedCounterData.runes.secondaryTree, runes: selectedCounterData.runes.secondaryRunes }].map(({ label, tree, runes }) => (
                           <div key={label}>
                             <div className="mb-3 flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-zinc-500">
                               <div className="h-px flex-1 bg-white/[0.06]" />{label} — {tree}<div className="h-px flex-1 bg-white/[0.06]" />
@@ -573,9 +650,7 @@ export default function Page() {
                             <div className="h-px flex-1 bg-white/[0.06]" />Shards<div className="h-px flex-1 bg-white/[0.06]" />
                           </div>
                           <div className="flex flex-wrap gap-2">
-                            {selectedCounterData.runes.shards.map((s) => (
-                              <span key={s} className="rounded-md bg-white/[0.04] px-2.5 py-1 text-xs text-zinc-400">{s}</span>
-                            ))}
+                            {selectedCounterData.runes.shards.map((s) => <span key={s} className="rounded-md bg-white/[0.04] px-2.5 py-1 text-xs text-zinc-400">{s}</span>)}
                           </div>
                         </div>
                       </div>
@@ -638,13 +713,96 @@ export default function Page() {
         )}
 
         {/* ============================================================ */}
-        {/* COMMUNITY VIEW                                                */}
+        {/* FUNDAMENTALS                                                  */}
+        {/* ============================================================ */}
+
+        {pageView === 'fundamentals' && (
+          <div className="mt-4 space-y-4">
+
+            {/* Intro */}
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-lime-400/10 text-lime-400">
+                  <BookOpen className="h-6 w-6" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-white">Top Lane Fundamentals</h2>
+                  <p className="mt-1 text-[13px] leading-relaxed text-zinc-400">
+                    Master the core concepts of top lane before worrying about matchups.
+                    These fundamentals apply to every champion and every game.
+                    Click any topic to expand.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Quote */}
+            <RandomQuote />
+
+            {/* Topics */}
+            <div className="space-y-3">
+              {FUNDAMENTALS.map((topic) => {
+                const isExpanded = expandedFundamental === topic.id;
+                const Icon = topic.icon;
+                return (
+                  <div key={topic.id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+                    {/* Topic header — clickable */}
+                    <button
+                      onClick={() => setExpandedFundamental(isExpanded ? null : topic.id)}
+                      className="flex w-full items-center gap-3 p-4 text-left transition hover:bg-white/[0.02]"
+                    >
+                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition ${
+                        isExpanded ? 'bg-lime-400/20 text-lime-400' : 'bg-white/[0.04] text-zinc-500'
+                      }`}>
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className={`text-[15px] font-semibold transition ${isExpanded ? 'text-lime-300' : 'text-white'}`}>
+                          {topic.title}
+                        </h3>
+                        <p className="text-[12px] text-zinc-500">{topic.subtitle}</p>
+                      </div>
+                      <ChevronRight className={`h-4 w-4 shrink-0 text-zinc-600 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
+                    </button>
+
+                    {/* Expanded content */}
+                    {isExpanded && (
+                      <div className="border-t border-white/[0.04] px-4 pb-4 pt-3">
+                        <div className="space-y-4">
+                          {topic.sections.map((section, i) => (
+                            <div key={i}>
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-lime-400/10 text-[10px] font-bold text-lime-400">
+                                  {i + 1}
+                                </div>
+                                <h4 className="text-sm font-semibold text-white">{section.heading}</h4>
+                              </div>
+                              <p className="ml-7 text-[13px] leading-[1.7] text-zinc-400">
+                                {section.content}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Another quote at bottom */}
+            <RandomQuote />
+          </div>
+        )}
+
+        {/* ============================================================ */}
+        {/* COMMUNITY                                                     */}
         {/* ============================================================ */}
 
         {pageView === 'community' && (
           <div className="mt-4 space-y-4">
 
-            {/* Community header */}
+            {/* Header + new post */}
             <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -657,7 +815,6 @@ export default function Page() {
                 </button>
               </div>
 
-              {/* New post form */}
               {showNewPost && (
                 <div className="mt-4 space-y-3 rounded-lg border border-lime-400/20 bg-lime-400/[0.03] p-4">
                   <input value={newPostTitle} onChange={(e) => setNewPostTitle(e.target.value)}
@@ -666,7 +823,7 @@ export default function Page() {
                   <textarea value={newPostContent} onChange={(e) => setNewPostContent(e.target.value)}
                     placeholder="What's on your mind?" rows={3}
                     className="w-full resize-none rounded-lg border border-white/[0.08] bg-black/40 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600" />
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <select value={newPostTag} onChange={(e) => setNewPostTag(e.target.value)}
                       className="rounded-lg border border-white/[0.08] bg-black/40 px-3 py-2 text-sm text-white outline-none">
                       <option value="General">General</option>
@@ -682,188 +839,80 @@ export default function Page() {
               )}
             </div>
 
-            {/* Posts */}
-            <div className="space-y-3">
-              {forumPosts.map(post => (
-                <div key={post.id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
-                  {/* Post header */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h3 className="text-[15px] font-semibold text-white">{post.title}</h3>
-                      <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-zinc-500">
-                        <span className="font-medium text-lime-400">{post.author}</span>
-                        <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{timeAgo(post.timestamp)}</span>
-                        <span className="flex items-center gap-1 rounded bg-white/[0.06] px-1.5 py-0.5"><Hash className="h-3 w-3" />{post.tag}</span>
-                      </div>
-                    </div>
-                    <LikeButton count={post.likes} onLike={() => setForumPosts(forumPosts.map(p => p.id === post.id ? { ...p, likes: p.likes + 1 } : p))} />
-                  </div>
+            {/* Quote */}
+            <RandomQuote />
 
-                  {/* Post content */}
-                  <p className="mt-3 text-[13px] leading-relaxed text-zinc-300">{post.content}</p>
-
-                  {/* Replies */}
-                  {post.replies.length > 0 && (
-                    <div className="mt-4 space-y-2 border-t border-white/[0.04] pt-3">
-                      {post.replies.map(reply => (
-                        <div key={reply.id} className="flex gap-3 rounded-lg bg-white/[0.02] p-3">
-                          <div className="h-6 w-6 shrink-0 rounded-full bg-lime-400/10 text-center text-[10px] font-bold leading-6 text-lime-400">
-                            {reply.author[0]}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 text-[11px]">
-                              <span className="font-medium text-lime-300">{reply.author}</span>
-                              <span className="text-zinc-600">{timeAgo(reply.timestamp)}</span>
-                            </div>
-                            <p className="mt-1 text-[13px] leading-relaxed text-zinc-400">{reply.content}</p>
-                          </div>
-                          <LikeButton count={reply.likes} onLike={() => {
-                            setForumPosts(forumPosts.map(p => p.id === post.id ? {
-                              ...p, replies: p.replies.map(r => r.id === reply.id ? { ...r, likes: r.likes + 1 } : r)
-                            } : p));
-                          }} />
+            {/* Posts or empty state */}
+            {forumPosts.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-white/[0.08] py-16 text-center">
+                <MessageCircle className="mx-auto h-10 w-10 text-zinc-700" />
+                <p className="mt-3 text-sm text-zinc-500">No posts yet. Be the first to start a discussion!</p>
+                <button onClick={() => setShowNewPost(true)}
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-lime-400 px-4 py-2 text-sm font-semibold text-black transition hover:bg-lime-300">
+                  <Plus className="h-4 w-4" />Create First Post
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {forumPosts.map(post => (
+                  <div key={post.id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="text-[15px] font-semibold text-white">{post.title}</h3>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-zinc-500">
+                          <span className="font-medium text-lime-400">{post.author}</span>
+                          <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{timeAgo(post.timestamp)}</span>
+                          <span className="flex items-center gap-1 rounded bg-white/[0.06] px-1.5 py-0.5"><Hash className="h-3 w-3" />{post.tag}</span>
                         </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Reply input */}
-                  {replyingTo === post.id ? (
-                    <div className="mt-3 flex gap-2">
-                      <input value={replyContent} onChange={(e) => setReplyContent(e.target.value)}
-                        placeholder="Write a reply..." autoFocus
-                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitReply(post.id); } }}
-                        className="flex-1 rounded-lg border border-white/[0.08] bg-black/40 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600" />
-                      <button onClick={() => submitReply(post.id)}
-                        className="rounded-lg bg-lime-400 px-3 py-2 text-sm font-semibold text-black transition hover:bg-lime-300">
-                        <Send className="h-3.5 w-3.5" />
-                      </button>
-                      <button onClick={() => { setReplyingTo(null); setReplyContent(''); }} className="text-sm text-zinc-500 hover:text-zinc-300">Cancel</button>
-                    </div>
-                  ) : (
-                    <button onClick={() => setReplyingTo(post.id)}
-                      className="mt-3 flex items-center gap-1.5 text-[12px] text-zinc-500 transition hover:text-lime-400">
-                      <MessageCircle className="h-3.5 w-3.5" />Reply · {post.replies.length} {post.replies.length === 1 ? 'reply' : 'replies'}
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Member tips section */}
-            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
-              <SectionHeader icon={Lightbulb} title="Member Tips & Tricks" subtitle="Quick tips from the Quantum Enigma community" />
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {communityTips.map(tip => (
-                  <div key={tip.id} className="flex items-start gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
-                    <div className="h-7 w-7 shrink-0 rounded-lg bg-lime-400/10 text-center text-[10px] font-bold leading-7 text-lime-400">
-                      {tip.author[0]}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 text-[11px]">
-                        <span className="font-medium text-lime-300">{tip.author}</span>
-                        <span className="rounded bg-white/[0.06] px-1.5 py-0.5 text-zinc-500">{tip.champId}</span>
                       </div>
-                      <p className="mt-1 text-[13px] leading-relaxed text-zinc-400">{tip.tip}</p>
+                      <LikeButton count={post.likes} onLike={() => setForumPosts(forumPosts.map(p => p.id === post.id ? { ...p, likes: p.likes + 1 } : p))} />
                     </div>
-                    <LikeButton count={tip.likes} onLike={() => setCommunityTips(communityTips.map(t => t.id === tip.id ? { ...t, likes: t.likes + 1 } : t))} />
+                    <p className="mt-3 text-[13px] leading-relaxed text-zinc-300">{post.content}</p>
+
+                    {post.replies.length > 0 && (
+                      <div className="mt-4 space-y-2 border-t border-white/[0.04] pt-3">
+                        {post.replies.map(reply => (
+                          <div key={reply.id} className="flex gap-3 rounded-lg bg-white/[0.02] p-3">
+                            <div className="h-6 w-6 shrink-0 rounded-full bg-lime-400/10 text-center text-[10px] font-bold leading-6 text-lime-400">{reply.author[0]}</div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 text-[11px]">
+                                <span className="font-medium text-lime-300">{reply.author}</span>
+                                <span className="text-zinc-600">{timeAgo(reply.timestamp)}</span>
+                              </div>
+                              <p className="mt-1 text-[13px] leading-relaxed text-zinc-400">{reply.content}</p>
+                            </div>
+                            <LikeButton count={reply.likes} onLike={() => {
+                              setForumPosts(forumPosts.map(p => p.id === post.id ? {
+                                ...p, replies: p.replies.map(r => r.id === reply.id ? { ...r, likes: r.likes + 1 } : r)
+                              } : p));
+                            }} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {replyingTo === post.id ? (
+                      <div className="mt-3 flex gap-2">
+                        <input value={replyContent} onChange={(e) => setReplyContent(e.target.value)}
+                          placeholder="Write a reply..." autoFocus
+                          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitReply(post.id); } }}
+                          className="flex-1 rounded-lg border border-white/[0.08] bg-black/40 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600" />
+                        <button onClick={() => submitReply(post.id)}
+                          className="rounded-lg bg-lime-400 px-3 py-2 text-sm font-semibold text-black transition hover:bg-lime-300">
+                          <Send className="h-3.5 w-3.5" />
+                        </button>
+                        <button onClick={() => { setReplyingTo(null); setReplyContent(''); }} className="text-sm text-zinc-500 hover:text-zinc-300">Cancel</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setReplyingTo(post.id)}
+                        className="mt-3 flex items-center gap-1.5 text-[12px] text-zinc-500 transition hover:text-lime-400">
+                        <MessageCircle className="h-3.5 w-3.5" />Reply · {post.replies.length} {post.replies.length === 1 ? 'reply' : 'replies'}
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* ============================================================ */}
-        {/* QUOTES VIEW                                                   */}
-        {/* ============================================================ */}
-
-        {pageView === 'quotes' && (
-          <div className="mt-4 space-y-4">
-
-            {/* Quotes header */}
-            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-white">Wall of Quotes</h2>
-                  <p className="mt-0.5 text-[13px] text-zinc-500">Words of wisdom, motivation, and tilt-prevention from our members.</p>
-                </div>
-                <button onClick={() => setShowNewQuote(!showNewQuote)}
-                  className="flex items-center gap-2 rounded-lg bg-lime-400 px-4 py-2 text-sm font-semibold text-black transition hover:bg-lime-300">
-                  <Plus className="h-4 w-4" />Add Quote
-                </button>
-              </div>
-
-              {showNewQuote && (
-                <div className="mt-4 space-y-3 rounded-lg border border-lime-400/20 bg-lime-400/[0.03] p-4">
-                  <input value={newQuoteAuthor} onChange={(e) => setNewQuoteAuthor(e.target.value)}
-                    placeholder="Your name..."
-                    className="w-full rounded-lg border border-white/[0.08] bg-black/40 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600" />
-                  <textarea value={newQuoteText} onChange={(e) => setNewQuoteText(e.target.value)}
-                    placeholder="Your quote..." rows={2}
-                    className="w-full resize-none rounded-lg border border-white/[0.08] bg-black/40 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600" />
-                  <div className="flex items-center gap-3">
-                    <button onClick={submitQuote}
-                      className="flex items-center gap-2 rounded-lg bg-lime-400 px-4 py-2 text-sm font-semibold text-black transition hover:bg-lime-300">
-                      <Send className="h-3.5 w-3.5" />Submit
-                    </button>
-                    <button onClick={() => setShowNewQuote(false)} className="text-sm text-zinc-500 hover:text-zinc-300">Cancel</button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Featured quote */}
-            {quotes.length > 0 && (
-              <div className="relative overflow-hidden rounded-xl border border-lime-400/20 bg-gradient-to-br from-lime-400/[0.06] to-transparent p-6">
-                <Quote className="absolute top-4 right-4 h-16 w-16 text-lime-400/[0.08]" />
-                <blockquote className="relative">
-                  <p className="text-xl font-medium leading-relaxed text-white">
-                    &ldquo;{quotes[0].text}&rdquo;
-                  </p>
-                  <footer className="mt-4 flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-full bg-lime-400/20 text-center text-sm font-bold leading-8 text-lime-400">
-                      {quotes[0].author[0]}
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-white">{quotes[0].author}</div>
-                      <div className="text-[11px] text-zinc-500">{quotes[0].role}</div>
-                    </div>
-                    <div className="ml-auto">
-                      <LikeButton count={quotes[0].likes} onLike={() => setQuotes(quotes.map((q, i) => i === 0 ? { ...q, likes: q.likes + 1 } : q))} />
-                    </div>
-                  </footer>
-                </blockquote>
-              </div>
             )}
-
-            {/* All quotes grid */}
-            <div className="grid gap-3 sm:grid-cols-2">
-              {quotes.slice(1).map((q, idx) => (
-                <div key={q.id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
-                  <div className="flex items-start gap-3">
-                    <Quote className="mt-0.5 h-4 w-4 shrink-0 text-lime-400/40" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[13px] leading-relaxed text-zinc-300">
-                        &ldquo;{q.text}&rdquo;
-                      </p>
-                      <div className="mt-3 flex items-center gap-2">
-                        <div className="h-6 w-6 rounded-full bg-lime-400/10 text-center text-[10px] font-bold leading-6 text-lime-400">
-                          {q.author[0]}
-                        </div>
-                        <div>
-                          <div className="text-xs font-medium text-white">{q.author}</div>
-                          <div className="text-[10px] text-zinc-500">{q.role}</div>
-                        </div>
-                        <div className="ml-auto">
-                          <LikeButton count={q.likes} onLike={() => setQuotes(quotes.map(qo => qo.id === q.id ? { ...qo, likes: qo.likes + 1 } : qo))} />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         )}
 
